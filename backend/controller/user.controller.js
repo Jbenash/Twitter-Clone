@@ -1,4 +1,5 @@
 import userModel from "../model/user.model.js";
+import createNotification from "../utils/createNotification.js"
 
 //getting profile info of other users 
 const profileInfo = async (req, res) => {
@@ -50,14 +51,17 @@ const toggleFollow = async (req, res) => {
 
         if (userId.toString() === targetUserId) return res.status(400).json({ success: false, message: "You cannot follow yourself" })
 
-        const user = await userModel.findById(userId)
-        const targetUser = await userModel.findById(targetUserId)
+        //fetch date from the user and the targetUser
+        const [user, targetUser] = await Promise.all([
+            userModel.findById(userId),
+            userModel.findById(targetUserId)
+        ])
 
-        if (!targetUser) return res.status(404).json({ success: false, message: "User not found" })
+        if (!targetUser || !user) return res.status(404).json({ success: false, message: "User not found" })
 
-        const isAvailable = user.following.includes(targetUserId) //includes function checks whether the id is there or not 
+        const isFollowing = user.following.includes(targetUserId) //includes function checks whether the id is there or not 
 
-        if (isAvailable) {
+        if (isFollowing) {
             //unfollow
             user.following.pull(targetUserId)
             targetUser.followers.pull(userId)
@@ -65,14 +69,23 @@ const toggleFollow = async (req, res) => {
             //follow
             user.following.push(targetUserId)
             targetUser.followers.push(userId)
+
+            //send notification when user follow someone
+            await createNotification({
+                from: userId,
+                to: targetUserId,
+                type: "follow"
+            })
+
+
         }
-        await user.save()
-        await targetUser.save()
+
+        await Promise.all([user.save(), targetUser.save()])
 
         return res.status(200).json({
             success: true,
-            following: !isAvailable,
-            message: isAvailable ? "Unfollowed successfully" : "Followed successfully"
+            following: !isFollowing,
+            message: isFollowing ? "Unfollowed successfully" : "Followed successfully"
         })
     } catch (error) {
         console.error(`Error in toggleFollow Controller: ${error}`);
