@@ -17,6 +17,7 @@ const profileInfo = async (req, res) => {
     }
 }
 
+//edit the user profile
 const editProfile = async (req, res) => {
     try {
         const userId = req.user._id
@@ -44,6 +45,7 @@ const editProfile = async (req, res) => {
     }
 }
 
+//toggle follow and unfollow
 const toggleFollow = async (req, res) => {
     try {
         const userId = req.user._id
@@ -59,7 +61,7 @@ const toggleFollow = async (req, res) => {
 
         if (!targetUser || !user) return res.status(404).json({ success: false, message: "User not found" })
 
-        const isFollowing = user.following.includes(targetUserId) //includes function checks whether the id is there or not 
+        const isFollowing = user.following.some(id => id.toString() === targetUserId.toString()) //convert to string for proper comparison
 
         if (isFollowing) {
             //unfollow
@@ -93,4 +95,41 @@ const toggleFollow = async (req, res) => {
     }
 }
 
-export { profileInfo, editProfile, toggleFollow }
+//showing suggestions for users 
+const getSuggestedUsers = async (req, res) => {
+    try {
+        const user = await userModel.findById(req.user._id) //this is best practice to re fetch from the database instead of direclty receiving the req object because it will be a fresh data 
+        const followingIds = user.following
+
+        let suggestions = await userModel.find({
+            _id: {
+                $nin: [...followingIds, user._id] //// exclude self + already followed
+            },
+            followers: {
+                $in: followingIds // followed by people I follow
+            }
+
+        })
+            .select("username profileImg ")
+            .limit(10)
+
+        //fallback -if he is a new user or he has not followed anyone so far 
+
+        if (suggestions.length === 0) {
+            suggestions = await userModel.find({
+                _id: { $nin: [user._id] }
+            })
+                .select("username profileImg ")
+                .limit(10)
+        }
+
+        if (suggestions) return res.status(200).json({ success: true, suggestions })
+        return res.send(404).json({ success: false, message: "No suitable sugesstions found" })
+
+    } catch (error) {
+        console.error(`Error in sugessted Controller: ${error}`);
+        res.status(500).json({ error: 'Internal server error' })
+    }
+}
+
+export { profileInfo, editProfile, toggleFollow, getSuggestedUsers }
