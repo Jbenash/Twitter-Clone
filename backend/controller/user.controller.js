@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import cloudinary from "../config/cloudinary.js";
+import uploadToCloudinary from "../utils/uploadToCloudinary.js";
 import userModel from "../model/user.model.js";
 import createNotification from "../utils/createNotification.js";
 
@@ -25,7 +25,7 @@ const editProfile = async (req, res) => {
   try {
     const userId = req.user._id;
     const { password, newPassword } = req.body;
-    
+
     /* ---------------- BUILD UPDATE DATA ---------------- */
 
     const updatedData = {};
@@ -67,16 +67,32 @@ const editProfile = async (req, res) => {
       updatedData.password = await bcrypt.hash(newPassword, salt);
     }
     /* ---------------- PROFILE-IMG & COVER-IMG UPDATE ---------------- */
-    const { profileImg, coverImg } = req.body;
-    if (profileImg) {
-      const uploadedReponse = await cloudinary.upload(profileImg);
-      profileImg = uploadedReponse.secure_url;
-    }
-    if (coverImg) {
-      const uploadedReponse = await cloudinary.upload(coverImg);
-      coverImg = uploadedReponse.secure_url;
+
+    if (req.files?.profileImg?.[0]) {
+      try {
+        const result = await uploadToCloudinary(
+          req.files.profileImg[0].buffer,
+          "twitter_clone/profile"
+        );
+        updatedData.profileImg = result.secure_url;
+      } catch (error) {
+        console.error("Cloudinary profile image upload error:", error);
+        throw error;
+      }
     }
 
+    if (req.files?.coverImg?.[0]) {
+      try {
+        const result = await uploadToCloudinary(
+          req.files.coverImg[0].buffer,
+          "twitter_clone/cover"
+        );
+        updatedData.coverImg = result.secure_url;
+      } catch (error) {
+        console.error("Cloudinary cover image upload error:", error);
+        throw error;
+      }
+    }
     /* ---------------- FINAL UPDATE ---------------- */
     const updatedUser = await userModel
       .findByIdAndUpdate(
