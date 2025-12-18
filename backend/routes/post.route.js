@@ -1,7 +1,7 @@
 import express from "express";
 import {
   createPost,
-  deletePosts,
+  deletePost,
   updatePosts,
   viewPosts,
 } from "../controller/posts.controller.js";
@@ -10,7 +10,7 @@ import { upload } from "../middleware/multer.js";
 
 const postRouter = express.Router();
 
-postRouter.get("/", auth, viewPosts);
+postRouter.get("/my-posts", auth, viewPosts);
 postRouter.post(
   "/create",
   auth,
@@ -23,6 +23,6 @@ postRouter.get("/comment/:id", auth, viewPosts);
 postRouter.get("/like/:id", auth, viewPosts);
 
 postRouter.post("/update", auth, updatePosts);
-postRouter.post("/delete", auth, deletePosts);
+postRouter.delete("/delete/:id", auth, deletePost);
 
 export default postRouter;
