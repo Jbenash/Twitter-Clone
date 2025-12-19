@@ -1,21 +1,41 @@
 import postModel from "../model/posts.model.js";
 import uploadToCloudinary from "../utils/uploadToCloudinary.js";
 import cloudinary from "../config/cloudinary.js";
+import { getPosts } from "../utils/getPosts.js";
+import userModel from "../model/user.model.js";
+import mongoose from "mongoose";
 
-const viewPosts = async (req, res) => {
+const getMyPosts = async (req, res) => {
   try {
-    const userId = req.user._id;
-    const posts = await postModel
-      .find({ user: userId })
-      .sort({ createdAt: -1 });
-
-    if (posts.length === 0)
-      return res
-        .status(200)
-        .json({ success: false, message: "posts not found" });
-    return res.status(200).json({ success: true, posts });
+    return getPosts({ user: req.user._id }, res);
   } catch (error) {
-    console.error("Error in viewPosts:", error);
+    console.error("Error in getMyPosts:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+const getUserPosts = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid userId" });
+    }
+    return getPosts({ user: id }, res);
+  } catch (error) {
+    console.error("Error in getUserPosts:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+const getFeedPosts = async (req, res) => {
+  try {
+    const user = await userModel.findById(req.user._id).select("following");
+    const users = [...user.following, user._id];
+
+    return getPosts({ user: { $in: users } }, res);
+  } catch (error) {
+    console.error("Error in getFeedPosts:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
@@ -56,14 +76,6 @@ const createPost = async (req, res) => {
   } catch (error) {
     console.error("Error in createPost:", error);
     res.status(500).json({ error: "Internal server error" });
-  }
-};
-
-const updatePosts = async (req, res) => {
-  try {
-    // code here
-  } catch (error) {
-    console.error(error);
   }
 };
 
@@ -119,4 +131,10 @@ const deletePost = async (req, res) => {
   }
 };
 
-export { updatePosts, viewPosts, deletePost, createPost };
+export {
+  getMyPosts,
+  getUserPosts,
+  getFeedPosts,
+  deletePost,
+  createPost,
+};
