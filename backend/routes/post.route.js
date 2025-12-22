@@ -4,7 +4,9 @@ import {
   deletePost,
   getMyPosts,
   getFeedPosts,
-  getUserPosts
+  getUserPosts,
+  toggleLikeUnlike,
+  postComment,
 } from "../controller/posts.controller.js";
 import auth from "../middleware/auth.js";
 import { upload } from "../middleware/multer.js";
@@ -18,12 +20,11 @@ postRouter.post(
   upload.fields([{ name: "image" }]),
   createPost
 );
-postRouter.get("/feed", auth,getFeedPosts );
+postRouter.get("/feed", auth, getFeedPosts);
 postRouter.get("/user/:id", auth, getUserPosts);
 
-
-// postRouter.get("/comment/:id", auth, viewPosts);
-// postRouter.get("/like/:id", auth, viewPosts);
+postRouter.get("/:id/comment", auth, postComment);
+postRouter.get("/:id/like", auth, toggleLikeUnlike);
 
 postRouter.delete("/delete/:id", auth, deletePost);
 

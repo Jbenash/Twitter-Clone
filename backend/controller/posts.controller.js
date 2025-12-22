@@ -122,12 +122,51 @@ const deletePost = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in deletePost:", error);
-    console.error("Error details:", error.message);
     res.status(500).json({
       success: false,
       message: "Internal server error",
       error: error.message,
     });
+  }
+};
+
+const toggleLikeUnlike = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { id: postId } = req.params;
+
+    const post = await postModel.findById(postId);
+    if (!post)
+      return res
+        .status(404)
+        .json({ success: false, message: "Post not found" });
+
+    const liked = post.likes.some((id) => id.toString() === userId.toString());
+
+    if (!liked) {
+      post.likes.push(userId);
+    } else {
+      post.likes.pull(userId);
+    }
+
+    await post.save();
+
+    res.status(200).json({
+      success: true,
+      message: liked ? "successfully unliked" : "successfully liked",
+      liked: !liked,
+      likesCount: post.likes.length,
+    });
+  } catch (error) {
+    console.error("Error in createPost:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const postComment = async (req, res) => {
+  try {
+  } catch (error) {
+    console.error(error);
   }
 };
 
@@ -137,4 +176,6 @@ export {
   getFeedPosts,
   deletePost,
   createPost,
+  toggleLikeUnlike,
+  postComment,
 };
