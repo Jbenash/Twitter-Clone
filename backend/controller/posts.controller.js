@@ -1,4 +1,5 @@
 import postModel from "../model/posts.model.js";
+import notified from "../utils/createNotification.js";
 import uploadToCloudinary from "../utils/uploadToCloudinary.js";
 import cloudinary from "../config/cloudinary.js";
 import { getPosts } from "../utils/getPosts.js";
@@ -71,8 +72,7 @@ const createPost = async (req, res) => {
       return res
         .status(500)
         .json({ status: false, message: "Failed to create post in DB" });
-
-    res.status(200).json({ success: true, post });
+    return res.status(200).json({ success: true, post });
   } catch (error) {
     console.error("Error in createPost:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -151,7 +151,14 @@ const toggleLikeUnlike = async (req, res) => {
 
     await post.save();
 
-    res.status(200).json({
+    if (post.user.toString() === userId.toString())
+      await notified({
+        from: userId,
+        to: post.user,
+        type: "like",
+      });
+
+    return res.status(200).json({
       success: true,
       message: liked ? "successfully unliked" : "successfully liked",
       liked: !liked,
@@ -163,10 +170,124 @@ const toggleLikeUnlike = async (req, res) => {
   }
 };
 
-const postComment = async (req, res) => {
+const likedMyPosts = async (params) => {
   try {
   } catch (error) {
     console.error(error);
+  }
+};
+
+const likedUserPosts = async (params) => {
+  try {
+    // code here
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const getPostComments = async (req, res) => {
+  try {
+    const { id: postId } = req.params;
+
+    const post = await postModel
+      .findById(postId)
+      .populate("comments.user", "username profileImg");
+
+    if (!post)
+      return res
+        .status(404)
+        .json({ success: false, message: "Post is not available " });
+
+    res.status(200).json({ success: true, comments: post.comments });
+  } catch (error) {
+    console.error("Error in getPostComment:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const deleteComment = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { id: postId, commentId } = req.params;
+
+    const post = await postModel.findById(postId);
+
+    if (!post)
+      return res
+        .status(404)
+        .json({ success: false, message: "Post is not available " });
+
+    const comment = post.comments.id(commentId); //.id() It is a Mongoose subdocument helper method which helps to find the id and fetch the comment
+
+    if (!comment)
+      return res
+        .status(404)
+        .json({ success: false, message: "Comment is not available " });
+
+    const isCommentOwner = comment.user.toString() === userId.toString();
+    const isPostOwner = post.user.toString() === userId.toString();
+
+    if (!isCommentOwner && !isPostOwner)
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to delete this comment",
+      });
+
+    comment.deleteOne();
+    await post.save();
+
+    return res
+      .status(200)
+      .json({ success: true, message: "comment deleted succesfully " });
+  } catch (error) {
+    console.error("Error in deleteComment:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const addComment = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { id: postId } = req.params;
+    const { text } = req.body;
+
+    if (!text || !text.trim())
+      return res
+        .status(400)
+        .json({ success: false, message: "Comment text is needed" });
+
+    if (text.length > 280)
+      return res
+        .status(400)
+        .json({ success: false, message: "Comment text is too long" });
+
+    const post = await postModel.findById(postId);
+
+    if (!post)
+      return res
+        .status(404)
+        .json({ success: false, message: "Post is not available " });
+
+    post.comments.push({
+      user: userId,
+      text,
+    });
+
+    await post.save();
+
+    if (post.user.toString() === userId.toString())
+      await notified({
+        from: userId,
+        to: post.user,
+        type: "comment",
+      });
+
+    return res
+      .status(200)
+      .json({ success: true, message: "Comment added succesfully" });
+  } catch (error) {
+    console.error("Error in addComment:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -177,5 +298,9 @@ export {
   deletePost,
   createPost,
   toggleLikeUnlike,
-  postComment,
+  likedMyPosts,
+  likedUserPosts,
+  getPostComments,
+  deleteComment,
+  addComment,
 };

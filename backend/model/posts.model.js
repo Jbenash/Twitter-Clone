@@ -24,8 +24,13 @@ const PostSchema = mongoose.Schema(
     ],
     comments: [
       {
-        user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-        text: { type: String, required: true },
+        _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        text: { type: String, required: true, trim: true, maxLength: 280 },
         createdAt: { type: Date, default: Date.now },
       },
     ],

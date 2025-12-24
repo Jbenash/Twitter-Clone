@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import uploadToCloudinary from "../utils/uploadToCloudinary.js";
 import userModel from "../model/user.model.js";
-import createNotification from "../utils/createNotification.js";
+import notified from "../utils/createNotification.js";
 
 //getting profile info of other users
 const profileInfo = async (req, res) => {
@@ -154,7 +154,7 @@ const toggleFollow = async (req, res) => {
       targetUser.followers.push(userId);
 
       //send notification when user follow someone
-      await createNotification({
+      await notified({
         from: userId,
         to: targetUserId,
         type: "follow",

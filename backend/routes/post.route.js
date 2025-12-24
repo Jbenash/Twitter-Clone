@@ -6,13 +6,17 @@ import {
   getFeedPosts,
   getUserPosts,
   toggleLikeUnlike,
-  postComment,
+  getPostComments,
+  addComment,
+  deleteComment,
+  likedMyPosts,
+  likedUserPosts,
 } from "../controller/posts.controller.js";
 import auth from "../middleware/auth.js";
 import { upload } from "../middleware/multer.js";
 
 const postRouter = express.Router();
-
+//:id refers to postId
 postRouter.get("/my-posts", auth, getMyPosts);
 postRouter.post(
   "/create",
@@ -23,8 +27,13 @@ postRouter.post(
 postRouter.get("/feed", auth, getFeedPosts);
 postRouter.get("/user/:id", auth, getUserPosts);
 
-postRouter.get("/:id/comment", auth, postComment);
+postRouter.get("/:id/comment", auth, getPostComments);
+postRouter.delete("/:id/comment/:commentId", auth, deleteComment);
+postRouter.post("/:id/comment", auth, addComment);
+
 postRouter.get("/:id/like", auth, toggleLikeUnlike);
+postRouter.get("/likes/me", auth, likedMyPosts);
+postRouter.get("/likes/:userId", auth, likedUserPosts);
 
 postRouter.delete("/delete/:id", auth, deletePost);
 
