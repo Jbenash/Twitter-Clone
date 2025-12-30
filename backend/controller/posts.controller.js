@@ -170,18 +170,35 @@ const toggleLikeUnlike = async (req, res) => {
   }
 };
 
-const likedMyPosts = async (params) => {
+const getMyLikedPosts = async (req, res) => {
   try {
+    const userId = req.user._id;
+
+    return getPosts({ likes: userId }, res);
   } catch (error) {
-    console.error(error);
+    console.error("Error in getMyLikedPosts:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 };
 
-const likedUserPosts = async (params) => {
+const getUserLikedPosts = async (req, res) => {
   try {
-    // code here
+    const { userId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(userId))
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid userid" });
+
+    return getPosts({ likes: userId }, res);
   } catch (error) {
-    console.error(error);
+    console.error("Error in getUserLikedPosts:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 };
 
@@ -298,8 +315,8 @@ export {
   deletePost,
   createPost,
   toggleLikeUnlike,
-  likedMyPosts,
-  likedUserPosts,
+  getMyLikedPosts,
+  getUserLikedPosts,
   getPostComments,
   deleteComment,
   addComment,

@@ -9,8 +9,8 @@ import {
   getPostComments,
   addComment,
   deleteComment,
-  likedMyPosts,
-  likedUserPosts,
+  getMyLikedPosts,
+  getUserLikedPosts,
 } from "../controller/posts.controller.js";
 import auth from "../middleware/auth.js";
 import { upload } from "../middleware/multer.js";
@@ -32,8 +32,8 @@ postRouter.delete("/:id/comment/:commentId", auth, deleteComment);
 postRouter.post("/:id/comment", auth, addComment);
 
 postRouter.get("/:id/like", auth, toggleLikeUnlike);
-postRouter.get("/likes/me", auth, likedMyPosts);
-postRouter.get("/likes/:userId", auth, likedUserPosts);
+postRouter.get("/likes/me", auth, getMyLikedPosts);
+postRouter.get("/likes/:userId", auth, getUserLikedPosts);
 
 postRouter.delete("/delete/:id", auth, deletePost);
 
