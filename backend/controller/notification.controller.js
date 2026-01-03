@@ -6,7 +6,7 @@ const viewNotification = async (req, res) => {
 
     const notifications = await notificationModel
       .find({ to: userId })
-      .populate("from", "username profileImg ")
+      .populate("from", "username fullname profileImg ")
       .populate("postId", "content image")
       .sort({ createdAt: -1 });
 

@@ -191,7 +191,7 @@ const getSuggestedUsers = async (req, res) => {
           $in: followingIds, // followed by people I follow
         },
       })
-      .select("username profileImg ")
+      .select("username fullname profileImg")
       .limit(10);
 
     //fallback -if he is a new user or he has not followed anyone so far
@@ -201,7 +201,7 @@ const getSuggestedUsers = async (req, res) => {
         .find({
           _id: { $nin: [user._id] },
         })
-        .select("username profileImg ")
+        .select("username fullname profileImg")
         .limit(10);
     }
 

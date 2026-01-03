@@ -162,7 +162,7 @@ const toggleLikeUnlike = async (req, res) => {
       success: true,
       message: liked ? "successfully unliked" : "successfully liked",
       liked: !liked,
-      likesCount: post.likes.length,
+      likes: post.likes,
     });
   } catch (error) {
     console.error("Error in createPost:", error);
