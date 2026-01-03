@@ -26,15 +26,53 @@ const viewNotification = async (req, res) => {
 };
 const markAllNotificationRead = async (req, res) => {
   try {
+    const userId = req.user._id;
+
+    const marked = await notificationModel.updateMany(
+      {
+        to: userId,
+        isRead: false,
+      },
+      {
+        isRead: true,
+      }
+    );
+    if (marked.matchedCount === 0)
+      return res
+        .status(404)
+        .json({ success: false, message: "No unread notifications found" });
+    res.status(200).json({ success: true, marked });
   } catch (error) {
-    console.error(error);
+    console.error("markAllNotificationsAsRead error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
 const markNotificationRead = async (req, res) => {
   try {
+    const userId = req.user._id;
+    const { id } = req.params;
+
+    const marked = await notificationModel.findOneAndUpdate(
+      {
+        _id: id,
+        to: userId,
+      },
+      {
+        isRead: true,
+      },
+      { new: true }
+    );
+
+    if (!marked)
+      return res
+        .status(404)
+        .json({ success: false, message: "Notification not found" });
+
+    res.status(200).json({ success: true, marked });
   } catch (error) {
-    console.error(error);
+    console.error("markNotificationAsRead error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 const deleteNotification = async (req, res) => {
@@ -43,7 +81,7 @@ const deleteNotification = async (req, res) => {
     const { id } = req.params;
 
     const notification = await notificationModel.findOneAndDelete({
-      id,
+      _id: id,
       to: userId,
     });
 
